@@ -1,0 +1,5 @@
+List of available commands:
+===========================
+help: Shows this help message
+echo <message>: Prints a message
+===========================
