@@ -61,3 +61,43 @@ func echo(session *discordgo.Session, discordMsg *discordgo.MessageCreate, messa
 		echo(session, discordMsg, "Error: Exceeded allowed output text length.", COLOR_RED)
 	}
 }
+
+func formatPath(path *string) error {
+
+	// Return to parent directory
+	if strings.Contains(*path, "..") {
+
+		currPath := getCurrentDirectoryPath()
+
+		for _, dir := range strings.Split(*path, "/") {
+
+			if dir == ".." {
+				currDir, err := getDirectory(currPath, false, false)
+
+				if err != nil {
+					return err
+				}
+
+				currPath = (*currDir).path
+
+			} else if dir != "" {
+				currPath += "/" + dir
+			}
+		}
+
+		*path = currPath
+		return nil
+
+	} else if (*path)[0] == '~' {
+		// Return to root directory
+		*path = "/" + (*path)[1:]
+		return nil
+	} else if (*path)[0] == '.' {
+		// Return to current directory
+		*path = getCurrentDirectoryPath() + "/" + (*path)[1:]
+		return nil
+	} else {
+		*path = getCurrentDirectoryPath() + "/" + *path
+		return nil
+	}
+}

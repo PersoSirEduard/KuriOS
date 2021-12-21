@@ -1,0 +1,17 @@
+{
+    "My Folder": {
+        "type": "folder",
+        "children": {
+            "My File": {
+                "type": "file",
+                "data": "My Content"
+            },
+            "My Other Folder": {
+                "type": "folder",
+                "children": {
+                    
+                }
+            }
+        }
+    }
+}

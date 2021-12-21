@@ -2,4 +2,5 @@ List of available commands:
 ===========================
 help: Shows this help message
 echo <message>: Prints a message
+pwd: Prints the current working directory
 ===========================

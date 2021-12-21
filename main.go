@@ -11,6 +11,8 @@ import (
 )
 
 var config map[string]interface{}
+var root Folder
+var currentDir *Folder
 
 func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 
@@ -25,6 +27,11 @@ func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 		return
 	}
 
+	// Ignore command if it begins with '!'
+	if message.Content[0] == '!' {
+		return
+	}
+
 	// Parse input command line
 	commands, err := parseCommandLine(message.Content)
 
@@ -35,6 +42,8 @@ func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 	}
 
 	switch commands[0] {
+
+	// Print out all available commands
 	case "help":
 		content, err := os.ReadFile("help.txt")
 
@@ -46,10 +55,36 @@ func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 		echo(session, message, string(content), COLOR_WHITE)
 		break
 
+	// Print out a message to the output
 	case "echo":
 		echo(session, message, strings.Join(commands[1:], " "), COLOR_WHITE)
 		break
 
+	// Get the current directory
+	case "pwd":
+		echo(session, message, getCurrentDirectoryPath(), COLOR_WHITE)
+		break
+
+	case "ls":
+
+		break
+
+	case "cd":
+		// nextDir, err := getDirectory(commands[1], true, true)
+
+		// if err != nil {
+		// 	echo(session, message, "Error: Could not find the directory.", COLOR_RED)
+		// 	return
+		// }
+
+		// currentDir = nextDir.path + nextDir.name + "/"
+		// echo(session, message, "Changed directory to "+getCurrentDirectoryPath(), COLOR_GREEN)
+		break
+
+	case "test":
+		echo(session, message, root.path+root.name, COLOR_BLUE)
+
+	// Unkown command
 	default:
 		echo(session, message, "Error: Unknown command. Use \"help\" for more information.", COLOR_RED)
 		break
@@ -66,6 +101,17 @@ func main() {
 		fmt.Println("Error: Could not load configurations,", err)
 		return
 	}
+
+	fmt.Println("Loaded configurations.")
+
+	// Load the root directory
+	err = loadTree()
+	if err != nil {
+		fmt.Println("Error: Could not load the root directory,", err)
+		return
+	}
+
+	fmt.Println("Loaded directory tree.")
 
 	// Create a new Discord session using the provided bot token.
 	client, err := discordgo.New("Bot " + config["token"].(string))
