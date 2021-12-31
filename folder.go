@@ -99,7 +99,11 @@ func _loadElement(element *gjson.Result, path string) (map[string]*Folder, map[s
 }
 
 // Retrive a directory from the tree
-func getDirectory(path string, formatting bool, relative bool) (*Folder, error) {
+func getDirectory(path string, formatting bool) (*Folder, error) {
+
+	if path == "/" {
+		return &root, nil
+	}
 
 	// Support relative path formatting
 	if formatting {
@@ -110,14 +114,9 @@ func getDirectory(path string, formatting bool, relative bool) (*Folder, error) 
 		}
 	}
 
-	pathRoute := strings.Split(path, "/")
-
 	currDir := &root
 
-	if relative {
-		dir, _ := getDirectory((*currentDir).path, false, false)
-		currDir = dir
-	}
+	pathRoute := strings.Split(path, "/")
 
 	for _, p := range pathRoute {
 

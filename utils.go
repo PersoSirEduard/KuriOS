@@ -72,7 +72,7 @@ func formatPath(path *string) error {
 		for _, dir := range strings.Split(*path, "/") {
 
 			if dir == ".." {
-				currDir, err := getDirectory(currPath, false, false)
+				currDir, err := getDirectory(currPath, false)
 
 				if err != nil {
 					return err

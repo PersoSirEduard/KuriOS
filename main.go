@@ -70,19 +70,31 @@ func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 		break
 
 	case "cd":
-		// nextDir, err := getDirectory(commands[1], true, true)
+		nextDir, err := getDirectory(commands[1], true)
 
-		// if err != nil {
-		// 	echo(session, message, "Error: Could not find the directory.", COLOR_RED)
-		// 	return
-		// }
+		if err != nil {
+			echo(session, message, "Error: Could not find the directory.", COLOR_RED)
+			return
+		}
 
-		// currentDir = nextDir.path + nextDir.name + "/"
-		// echo(session, message, "Changed directory to "+getCurrentDirectoryPath(), COLOR_GREEN)
+		currentDir = nextDir
+		echo(session, message, "Changed directory to "+getCurrentDirectoryPath(), COLOR_GREEN)
 		break
 
-	case "test":
-		echo(session, message, root.path+root.name, COLOR_BLUE)
+	case "cat":
+		break
+
+	case "grab":
+		break
+
+	case "set":
+		break
+
+	case "get":
+		break
+
+	case "delete":
+		break
 
 	// Unkown command
 	default:
