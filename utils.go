@@ -11,7 +11,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// Supported color constants
+// Supported color constants for discord output
 const (
 	COLOR_WHITE  = "\n"
 	COLOR_RED    = "diff\n-"
@@ -20,48 +20,63 @@ const (
 	COLOR_YELLOW = "fix\n"
 )
 
-// Load configurations from config.json
-func getConfig(config *map[string]interface{}) error {
+// Load configurations from a specified file and insert them into a config map
+// @param config: *map[string]interface{} - The configuration map that will be loaded
+// @param path: string - The path to the configuration file
+// @return error - Any error that may have occurred
+func getConfig(config *map[string]interface{}, path string) error {
 
-	jsonConfig, err := os.Open("config.json")
-
+	// Load the configuration file
+	jsonConfig, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 
+	// Close the file
 	defer jsonConfig.Close()
+
+	// Read the file's contents
 	byteValue, _ := ioutil.ReadAll(jsonConfig)
+
+	// Convert the byte array to a string and JSON parse it
 	json.Unmarshal(byteValue, config)
 
 	return nil
 }
 
-// Parse a string into a list of individual commands
+// Parse an incoming command and return the command and its arguments
+// @param message: string - The command to parse
+// @return []string - The command parsed
+// @return error - Any error that may have occurred
 func parseCommandLine(input string) ([]string, error) {
 
-	// Read file and properly parse the input
+	// Read the command and properly parse the input
 	reader := csv.NewReader(strings.NewReader(input))
 	reader.Comma = ' '
 	fields, err := reader.Read()
 
-	// Check for any input errors
-	if err != nil {
-		return nil, err
-	}
-
-	return fields, nil
+	return fields, err
 }
 
-// Return a message back to the user
-func echo(session *discordgo.Session, discordMsg *discordgo.MessageCreate, message string, color string) {
-	_, err := session.ChannelMessageSend(discordMsg.ChannelID, "```"+color+message+"```")
+// **DISCORD FEATURE ONLY**
+// Print a message to the discord channel
+// @param session: *discordgo.Session - The discord session to use
+// @param channelId: string - The channel to print the message to
+// @param message: string - The message to print
+// @param color: string - The color of the message
+func echo(session *discordgo.Session, channelId string, message string, color string) {
 
+	// Send the message to the discord channel
+	_, err := session.ChannelMessageSend(channelId, "```"+color+message+"```")
 	if err != nil {
 		fmt.Println("Error: Could not send a response message,", err)
-		echo(session, discordMsg, "Error: Exceeded allowed output text length.", COLOR_RED)
+		echo(session, channelId, "Error: Exceeded allowed output text length.", COLOR_RED)
 	}
 }
 
+// Support for file and folder directory formatting
+// @param path: *string - The path to the directory
+// @return error - Any error that may have occurred
 func formatPath(path *string) error {
 
 	// Return to parent directory

@@ -18,36 +18,48 @@ type Folder struct {
 }
 
 // Get the current working directory
+// @return string - The current working directory
 func getCurrentDirectoryPath() string {
 	return (*currentDir).path + (*currentDir).name
 }
 
-func loadTree() error {
+// Load a specified environment into memory
+// @param path: string - The environment path to load
+// @return error - The error if any
+func loadEnvironment(path string) error {
 
-	// Load directory tree data from directory.json
-	directoryJson, err := os.Open("directory.json")
-
+	// Load directory tree data from the specified path
+	directoryJson, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 
+	// Close the file
 	defer directoryJson.Close()
+
+	// Read the file's contents
 	byteValue, _ := ioutil.ReadAll(directoryJson)
+	// Convert the byte array to a string and JSON parse it
 	dirStruc := gjson.Parse(string(byteValue))
 
 	// Load the root directory
 	folders, files, err := _loadElement(&dirStruc, "/")
-
 	if err != nil {
 		return nil
 	}
 
+	// Create and set the root directory
 	root = Folder{"", "/", folders, files}
 	currentDir = &root
 
 	return nil
 }
 
+// Load inner environment data into memory
+// @param element: *gjson.Result - Element to explore and load into memeory
+// @param path: string - The path to the element
+// @return map[string]*Folder - The folders in the element
+// @return map[string]*File - The files in the element
 func _loadElement(element *gjson.Result, path string) (map[string]*Folder, map[string]*File, error) {
 
 	// Initialize the folder and file maps
@@ -98,9 +110,13 @@ func _loadElement(element *gjson.Result, path string) (map[string]*Folder, map[s
 	return folders, files, nil
 }
 
-// Retrive a directory from the tree
+// Retrive a directory folder
+// @param path: string - The path to the directory
+// @param formatting: bool - Whether or not formatting syntax is used
+// @return *Folder - The directory folder
 func getDirectory(path string, formatting bool) (*Folder, error) {
 
+	// Check to see if the specified path is the root
 	if path == "/" {
 		return &root, nil
 	}
@@ -116,8 +132,10 @@ func getDirectory(path string, formatting bool) (*Folder, error) {
 
 	currDir := &root
 
+	// Get travel steps
 	pathRoute := strings.Split(path, "/")
 
+	// Navigate through the path
 	for _, p := range pathRoute {
 
 		// Ignore empty path
