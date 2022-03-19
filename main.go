@@ -80,7 +80,11 @@ func onMessage(session *discordgo.Session, message *discordgo.MessageCreate) {
 		echo(session, message.ChannelID, getCurrentDirectoryPath(), COLOR_WHITE)
 		break
 
+	// List the contents of the current directory
 	case "ls":
+
+		tree := drawDirectory(currentDir, 4)
+		echo(session, message.ChannelID, tree, COLOR_WHITE)
 
 		break
 

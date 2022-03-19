@@ -56,7 +56,7 @@ func loadEnvironment(path string) error {
 }
 
 // Load inner environment data into memory
-// @param element: *gjson.Result - Element to explore and load into memeory
+// @param element: *gjson.Result - Element to explore and load into memory
 // @param path: string - The path to the element
 // @return map[string]*Folder - The folders in the element
 // @return map[string]*File - The files in the element
@@ -154,4 +154,93 @@ func getDirectory(path string, formatting bool) (*Folder, error) {
 	}
 
 	return currDir, nil
+}
+
+// Draw the directory tree (only the first level)
+// @param directory: *Folder - The directory to draw
+// @param maxDepth: int - Max tree depth to draw
+// @return string - The directory tree
+func drawDirectory(directory *Folder, maxDepth int) string {
+
+	// Initialize the tree name
+	treeOutput := directory.name + "/\n|\n"
+
+	// Generate the tree recursively
+	tree := drawDirectoryUtil(directory, "", maxDepth)
+	for _, line := range tree {
+		treeOutput += line + "\n"
+	}
+
+	return treeOutput
+}
+
+// Utility function to draw the directory tree recursively
+// @param directory: *Folder - The directory to draw
+// @param prefix: string - The prefix to use before each line of the tree
+// @param depth: int - The current depth of the tree. At depth 0, the discovery of the directory is done.
+// @return []string - The directory tree as a list of lines
+func drawDirectoryUtil(directory *Folder, prefix string, depth int) []string {
+
+	// Get the size of the directory
+	numOfFolders := len(directory.folders)
+	countFolder := 0
+	numOfFiles := len(directory.files)
+	countFile := 0
+
+	dirTree := make([]string, 0)
+
+	// Check if the max discovery depth has been reached
+	if depth < 0 {
+
+		// Check if there are any items remaining
+		// If there are no items remaining, then we are at the end of the tree
+		// Otherwise, we show that there are more items
+		if (numOfFolders + numOfFiles) > 0 {
+			dirTree = append(dirTree, prefix+"└─(...)")
+		}
+
+		return dirTree
+	}
+
+	// Draw the folders
+	for _, folder := range directory.folders {
+
+		// Draw sub folder names
+		if countFolder == numOfFolders-1 && numOfFiles == 0 {
+			// Reached the last folder
+
+			dirTree = append(dirTree, prefix+"└─"+folder.name+"/")
+
+			// Draw sub folder contents
+			content := drawDirectoryUtil(folder, prefix+"  ", depth-1)
+			dirTree = append(dirTree, content...)
+
+		} else {
+
+			dirTree = append(dirTree, prefix+"├─"+folder.name+"/")
+
+			// Draw sub folder contents
+			content := drawDirectoryUtil(folder, prefix+"| ", depth-1)
+			dirTree = append(dirTree, content...)
+
+		}
+
+		countFolder++
+	}
+
+	// Draw the files
+	for _, file := range directory.files {
+
+		// Draw file names
+		if countFile == numOfFiles-1 {
+			// Reached the last file
+			dirTree = append(dirTree, prefix+"└─"+file.name)
+		} else {
+			dirTree = append(dirTree, prefix+"├─"+file.name)
+		}
+
+		countFile++
+	}
+
+	return dirTree
 }
