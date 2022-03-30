@@ -1,53 +1,61 @@
-{
-    "My Folder": {
-        "type": "folder",
-        "children": {
-            "My File": {
-                "type": "file",
-                "data": "My Content"
-            },
-            "My Other Folder": {
-                "type": "folder",
-                "children": {
-                    "AndrewSecret": {
-                        "type": "folder",
-                        "children": {
-                            "Andrew's File": {
-                                "type": "file",
-                                "data": "Andrew's Content"
+{   
+    "env": {
+
+    },
+    "vars": {
+        "test" : "this is a test"
+    },
+    "struct": {
+        "My Folder": {
+            "type": "folder",
+            "children": {
+                "My File": {
+                    "type": "file",
+                    "data": "My Content"
+                },
+                "My Other Folder": {
+                    "type": "folder",
+                    "children": {
+                        "AndrewSecret": {
+                            "type": "folder",
+                            "children": {
+                                "Andrew's File": {
+                                    "type": "file",
+                                    "data": "Andrew's Content"
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-    },
-    "Fred Folder": {
-        "type": "folder",
-        "children": {
-            "Fred File": {
-                "type": "file",
-                "data": "Fred Content"
-            },
-            "Fred Other Folder": {
-                "type": "folder",
-                "children": {
-                    
+        },
+        "Fred Folder": {
+            "type": "folder",
+            "children": {
+                "Fred File": {
+                    "type": "file",
+                    "data": "Fred Content"
+                },
+                "Fred Other Folder": {
+                    "type": "folder",
+                    "children": {
+                        
+                    }
                 }
             }
-        }
-    },
-    "BoringStuff": {
-        "type": "folder",
-        "children": {
-            "BoringFile": {
-                "type": "file",
-                "data": "Boring Content"
-            },
-            "BoringOtherFolder": {
-                "type": "folder",
-                "children": {
-                    
+        },
+        "BoringStuff": {
+            "type": "folder",
+            "children": {
+                "BoringFile": {
+                    "type": "file",
+                    "data": "Boring Content"
+                },
+                "BoringOtherFolder": {
+                    "type": "folder",
+                    "children": {
+                        
+                    }
                 }
             }
         }
