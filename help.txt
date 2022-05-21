@@ -1,6 +1,18 @@
 List of available commands:
 ===========================
-help: Shows this help message
-echo <message>: Prints a message
-pwd: Prints the current working directory
+help:                                   Shows this help message.
+echo <message>:                         Prints a message.
+pwd:                                    Prints the current working directory.
+ls:                                     Prints the current directory structure.
+cd <path>:                              Navigate into a relative directory.
+cat <path>:                             Preview the contents of a file.
+grab <path>:                            Download a file.
+get <name>:                             Get the value of a variable.
+set <name> <value>:                     Set/Create a new variable with a value.
+su <subscribe | unsubscribe> <role>:    Manage user roles.
+unlock <path> <key>                     Unlock a vault.
+lock <path> <key>                       Lock a vault.
+new                                     Open a new CLI channel.
+close                                   Close the current CLI channel.
+run                                     Run a Kode program.
 ===========================

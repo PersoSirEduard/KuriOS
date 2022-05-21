@@ -3,7 +3,11 @@
 
     },
     "vars": {
-        "test" : "this is a test"
+        "test" : "hello world"
+    },
+    "perms": {
+        "Community Manager": ["*"],
+        "everyone": ["help", "new", "close", "run"]
     },
     "struct": {
         "My Folder": {
@@ -31,6 +35,8 @@
         },
         "Fred Folder": {
             "type": "folder",
+            "locked": true,
+            "key": "12345",
             "children": {
                 "Fred File": {
                     "type": "file",
@@ -46,6 +52,7 @@
         },
         "BoringStuff": {
             "type": "folder",
+            "availableBetween": ["2000-07-23 23:43:04", "2004-07-23 23:43:04"],
             "children": {
                 "BoringFile": {
                     "type": "file",

@@ -1,6 +1,11 @@
 package main
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"time"
+)
 
 // Structure of a system variable holding data
 type SystemVariable struct {
@@ -15,9 +20,16 @@ type SystemVariable struct {
 // @return error - The error if the system variable does not exist
 func getSystemVariable(name string) (*SystemVariable, error) {
 	if systemVariableExists(name) {
+
+		if name == "time" {
+			timeInt, _ := strconv.ParseInt(systemVariables["time"].Value, 10, 64)
+			// Format the int unix to a string date
+			return &SystemVariable{"time", false, time.Unix(time.Now().Unix()-timeInt, 0).Format("2006-01-02 15:04:05")}, nil
+		}
+
 		return systemVariables[name], nil
 	} else {
-		return nil, errors.New("Error: The variable does not exist.")
+		return nil, errors.New("Error: The variable \"" + name + "\" does not exist.")
 	}
 }
 
@@ -36,11 +48,35 @@ func setSystemVariable(name string, value string) error {
 
 	// Check to see if the variable can be changed
 	if !(*variable).Immutable {
+
+		// Special case for time
+		if (*variable).Name == "time" {
+
+			if value == "now" {
+				(*variable).Value = fmt.Sprint(0)
+			} else {
+				// Parse date time format string to unix time
+
+				newTime, err := time.Parse("2006-01-02 15:04:05", value)
+
+				if err != nil {
+					return errors.New("Error: The time \"" + value + "\" is not in the correct format \"YYYY-MM-DD HH:MM:SS\".")
+				}
+
+				deltaTime := time.Now().Unix() - newTime.Unix()
+
+				systemVariables["time"].Value = fmt.Sprint(deltaTime)
+			}
+
+			return nil
+
+		}
+
 		// Set the variable to the specified value
 		(*variable).Value = value
 		return nil
 	} else {
-		return errors.New("Error: The variable is immutable.")
+		return errors.New("Error: The variable \"" + name + "\" is immutable.")
 	}
 }
 
@@ -50,7 +86,7 @@ func setSystemVariable(name string, value string) error {
 // @return error - The error if the system variable already exists
 func createSystemVariable(name string, value string) error {
 	if systemVariableExists(name) {
-		return errors.New("Error: The variable already exists.")
+		return errors.New("Error: The variable \"" + name + "\" already exists.")
 	} else {
 		systemVariables[name] = &SystemVariable{name, false, value}
 		return nil
@@ -63,4 +99,24 @@ func createSystemVariable(name string, value string) error {
 func systemVariableExists(name string) bool {
 	_, ok := systemVariables[name]
 	return ok
+}
+
+// Delete a system variable if it exists
+// @param name: string - The name of the system variable to delete
+// @return error - The error if the system variable does not exist
+func deleteSystemVariable(name string) error {
+	if systemVariableExists(name) {
+
+		// Check status of the variable
+		variable, _ := getSystemVariable(name)
+		if (*variable).Immutable || (*variable).Name == "time" {
+			return errors.New("Error: Cannot delete the immutable or essential system variable \"" + name + "\".")
+		}
+
+		// Remove the system variable from the map
+		delete(systemVariables, name)
+		return nil
+	} else {
+		return errors.New("Error: The variable \"" + name + "\" does not exist.")
+	}
 }

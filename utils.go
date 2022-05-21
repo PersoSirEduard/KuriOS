@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"strings"
 
@@ -67,27 +68,29 @@ func parseCommandLine(input string) ([]string, error) {
 func echo(session *discordgo.Session, channelId string, message string, color string) {
 
 	// Send the message to the discord channel
+	if len(message) > 1950 {
+		message = message[:1950] + "(...)"
+	}
 	_, err := session.ChannelMessageSend(channelId, "```"+color+message+"```")
 	if err != nil {
 		fmt.Println("Error: Could not send a response message,", err)
-		echo(session, channelId, "Error: Exceeded allowed output text length.", COLOR_RED)
 	}
 }
 
 // Support for file and folder directory formatting
 // @param path: *string - The path to the directory
 // @return error - Any error that may have occurred
-func formatPath(path *string) error {
+func formatPath(path *string, channel string) error {
 
 	// Return to parent directory
 	if strings.Contains(*path, "..") {
 
-		currPath := getCurrentDirectoryPath()
+		currPath := getCurrentDirectoryPath(channel)
 
 		for _, dir := range strings.Split(*path, "/") {
 
 			if dir == ".." {
-				currDir, err := getDirectory(currPath, false)
+				currDir, err := getDirectory(currPath, false, channel)
 
 				if err != nil {
 					return err
@@ -109,10 +112,21 @@ func formatPath(path *string) error {
 		return nil
 	} else if (*path)[0] == '.' {
 		// Return to current directory
-		*path = getCurrentDirectoryPath() + "/" + (*path)[1:]
+		*path = getCurrentDirectoryPath(channel) + "/" + (*path)[1:]
 		return nil
 	} else {
-		*path = getCurrentDirectoryPath() + "/" + *path
+		*path = getCurrentDirectoryPath(channel) + "/" + *path
 		return nil
 	}
+}
+
+// Generate a new Discord channel name
+// @param size int - The size of the channel name
+// @return string - The new channel name
+func NewChannelName(size int) string {
+	name := "channel-"
+	for i := 0; i < size; i++ {
+		name += fmt.Sprint(rand.Intn(10))
+	}
+	return name
 }

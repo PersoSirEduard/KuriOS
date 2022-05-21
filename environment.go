@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
@@ -28,6 +29,11 @@ func loadEnvironment(path string) error {
 	// Convert the byte array to a string and JSON parse it
 	dirStruc := gjson.Parse(string(byteValue))
 
+	// Clear variables
+	systemVariables = map[string](*SystemVariable){
+		"version": &(SystemVariable{"version", true, VERSION}), // Current version of the program
+		"time":    &(SystemVariable{"time", false, "0"}),       // Current time
+	}
 	// Load the variables if they exist
 	variables := dirStruc.Get("vars")
 	if variables.Exists() {
@@ -39,6 +45,25 @@ func loadEnvironment(path string) error {
 			if err != nil {
 				fmt.Printf("Exception encountered while loading variable \"%s\". Skipping it.\n", name)
 			}
+		}
+	}
+
+	// Clear permissions
+	systemPermissions = make(map[string]([]string))
+	priorityPermissions = []string{}
+	// Load permissions if they exist
+	permissions := dirStruc.Get("perms")
+	if permissions.Exists() {
+		// Load each permission to the environment
+		for name, value := range permissions.Map() {
+			priorityPermissions = append([]string{name}, priorityPermissions...)
+			// Create the permission array
+			array := make([]string, 0)
+			for _, element := range value.Array() {
+				array = append(array, element.String())
+			}
+
+			systemPermissions[name] = array
 		}
 	}
 
@@ -55,8 +80,11 @@ func loadEnvironment(path string) error {
 	}
 
 	// Create and set the root directory
-	root = Folder{"", "/", folders, files}
-	currentDir = &root
+	root = Folder{"", "/", folders, files, []string{"*", "*"}, false, ""}
+
+	// Reset the current directory
+	currentDir = map[string]*Folder{}
+	currentDir["default"] = &root
 
 	return nil
 }
@@ -78,6 +106,44 @@ func _loadElement(element *gjson.Result, path string) (map[string]*Folder, map[s
 		// Get sub element and its type
 		elType := value.Get("type").String()
 
+		availableBetween := []string{"*", "*"}
+		if value.Get("availableBetween").Exists() {
+			availableBetween = []string{}
+			for _, element := range value.Get("availableBetween").Array() {
+
+				iTime := element.String()
+				// Check to see if the time is valid format
+				_, err := time.Parse("2006-01-02 15:04:05", iTime)
+				if err != nil {
+					fmt.Printf("Exception encountered while loading time \"%s\". Invalid time format. Expected YYYY-MM-DD HH:MM:SS. Setting default value \"*\".\n", iTime)
+				}
+
+				// Add the time to the available between array
+				availableBetween = append(availableBetween, element.String())
+			}
+
+			// Check if only two elements are available
+			if len(availableBetween) != 2 {
+				fmt.Printf("Exception encountered while loading folder \"%s\". Invalid availableBetween argument. Setting default value [\"*\", \"*\"].\n", path+name)
+				availableBetween = []string{"*", "*"}
+			}
+			// ? Check if the first element is greater than the second
+
+		}
+
+		locked := false
+		lockKey := ""
+		if value.Get("locked").Exists() {
+			locked = value.Get("locked").Bool()
+			if locked {
+				if value.Get("key").Exists() {
+					lockKey = value.Get("key").String()
+				} else {
+					fmt.Printf("Exception encountered while loading folder \"%s\". Invalid lock key. Setting default value \"admin\".\n", path+name)
+				}
+			}
+		}
+
 		if elType == "folder" {
 
 			// Load subfolder
@@ -88,21 +154,19 @@ func _loadElement(element *gjson.Result, path string) (map[string]*Folder, map[s
 				return nil, nil, err
 			}
 
-			folders[name] = &Folder{name, path, subFolder, subFiles}
+			folders[name] = &Folder{name, path, subFolder, subFiles, availableBetween, locked, lockKey}
 
 		} else if elType == "file" {
 
 			// Load file
-			subFile := File{name, path, nil, ""}
+			subFile := File{name, path, "", "", availableBetween, locked, lockKey}
 
 			// Check to see if file has cache
 			if value.Get("cache").Exists() {
 				subFile.cache = value.Get("cache").String()
-			}
-
-			// Check to see if file has data
-			if value.Get("data").Exists() {
-				subFile.data = []byte(value.Get("data").String())
+			} else if value.Get("data").Exists() {
+				// Check to see if file has data
+				subFile.data = value.Get("data").String()
 			}
 
 			files[name] = &subFile
@@ -142,9 +206,33 @@ func saveEnvironment(path string) error {
 	}
 	outputEnvVar += "}," // Close the variables
 
+	// Handle permissions to save
+	outputEnvPerm := "\"perms\": {"     // Start the permissions
+	permCount := len(systemPermissions) // Count the number of permissions remaining
+	for name, permissions := range systemPermissions {
+		outputEnvPerm += "\"" + name + "\": ["
+
+		for i, perm := range permissions {
+			if i != len(permissions)-1 {
+				outputEnvPerm += "\"" + perm + "\","
+			} else {
+				outputEnvPerm += "\"" + perm + "\""
+			}
+		}
+
+		if permCount > 1 {
+			outputEnvPerm += "],"
+		} else {
+			outputEnvPerm += "]"
+		}
+
+		// Decrement the permission count
+		permCount--
+	}
+
 	// Handle the directory structure to save
-	outputEnvStruct := "\"struct\": {"     // Start the directory structure
-	folderCount := len(currentDir.folders) // Count the number of folders remaining
+	outputEnvStruct := "\"struct\": {" // Start the directory structure
+	folderCount := len(root.folders)   // Count the number of folders remaining
 	for _, folder := range root.folders {
 
 		// Add a comma if not the last element
@@ -184,7 +272,14 @@ func _saveElement(current *Folder) string {
 
 	output := "\"" + (*current).name + "\": {" // Start the folder
 	output += "\"type\": \"folder\","          // Set the type to folder
-	output += "\"children\": {"                // Start the children
+	if (*current).availableBetween[0] != "*" && (*current).availableBetween[1] != "*" {
+		output += "\"availableBetween\": [\"" + (*current).availableBetween[0] + "\", \"" + (*current).availableBetween[1] + "\"],"
+	}
+	if (*current).locked {
+		output += "\"locked\": true,"
+		output += "\"key\": \"" + (*current).key + "\","
+	}
+	output += "\"children\": {" // Start the children
 
 	folderCount := len((*current).folders) // Count the number of folders remaining
 	fileCount := len((*current).files)     // Count the number of files remaining
